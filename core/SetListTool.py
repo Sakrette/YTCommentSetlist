@@ -65,10 +65,12 @@ def parse(content, /, *, suppress=False, update=True, with_fixed=False):
     RAWS.update({'setlist': content})
     if content:
         setlist = setlist_parser.parse(content)
+        clear() # may have modifying messages
         
         for song in setlist.values():
             data.update({song['Song']: song})
         return setlist
+
 
 def fix(line_index=None, replacement=None, **kwargs):
     contents = RAWS['setlist'].split('\r\n')

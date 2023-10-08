@@ -78,8 +78,11 @@ def get_setlist(vid, /, *, update=False):
             vid   = LATEST[index][0]
         else:
             return
-    else:
-        index = [item[0] for item in LATEST].find(vid) # -1 if not found
+    else: # -1 if not found
+        try:
+            index = [item[0] for item in LATEST].index(vid)
+        except:
+            index = -1
 
     if not update and (~index and SETLISTS[index]): # use cached
         return SLT.set_data(SETLISTS[index])
@@ -97,7 +100,9 @@ def get_setlist(vid, /, *, update=False):
                 print('Setlist not found, maybe try other keywords? (separate with comma: ",")')
                 print('Current Keywords:', candis)
         else:
+            clear()
             return
+        clear()
     
     if type(setlist) is list: # need select
         print(f'Find {len(setlist)} SetLists, please select:', flush=True)
@@ -127,15 +132,19 @@ def get_setlist(vid, /, *, update=False):
     return setlist
 
 def route_video(index):
-    index = parse_int(index, (1, len(SETLISTS)))
-    if index is None:
-        return
-    setlist = get_setlist(index-1)
+    index_num = parse_int(index, (1, len(SETLISTS)))
+    if index_num is None:
+        setlist = get_setlist(index)
+    else:
+        setlist = get_setlist(index_num-1)
     if not setlist:
         SLT.parse("") # clear
-    SLT.main(dict(zip(("videoid", "datetime", "title"), LATEST[index-1])))
-    # back from SLT.main
-    SETLISTS[index-1] = SLT.setlist() # update, maybe fixed
+    if index_num is None:
+        SLT.main(dict(zip(("videoid", "datetime", "title"), YVT.info(index)[0])))
+    else:
+        SLT.main(dict(zip(("videoid", "datetime", "title"), LATEST[index_num-1])))
+        # back from SLT.main
+        SETLISTS[index_num-1] = SLT.setlist() # update, maybe fixed
     clear()
     show_latest(0) # 0 for all
 
