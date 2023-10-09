@@ -74,17 +74,23 @@ def info(*vids, jst=True):
     if not vids:
         return []
     
-    request = yt().videos().list(
-        part="snippet,liveStreamingDetails",
-        id = ",".join(vids)
-    )
-    response = request.execute()
+    info_list = []
+    iterator = range(0,len(vids),50) # 50 for each time
 
-    return sorted(((video['id'], (lambda t: convt(t) if jst else t)(
-                    video['snippet']['publishedAt'] if 'liveStreamingDetails' not in video
-                    else video['liveStreamingDetails']['scheduledStartTime'] if 'actualStartTime' not in video['liveStreamingDetails']
-                    else video['liveStreamingDetails']['actualStartTime']
-                ), video['snippet']['title']) for video in response['items']), key=lambda item: item[1], reverse=True)
+    for start_vid in iterator:
+        request = yt().videos().list(
+            part="snippet,liveStreamingDetails",
+            id = ",".join(vids[start_vid:start_vid+50])
+        )
+        response = request.execute()
+        info_list += [(video['id'], (lambda t: convt(t) if jst else t)(
+                        video['snippet']['publishedAt'] if 'liveStreamingDetails' not in video # videos
+                        else video['liveStreamingDetails']['actualStartTime'   ] if 'actualStartTime'    in video['liveStreamingDetails'] # archive
+                        else video['liveStreamingDetails']['scheduledStartTime'] if 'scheduledStartTime' in video['liveStreamingDetails'] # scheduled
+                        else video['snippet']['publishedAt'] # mysterious livestream
+                    ), video['snippet']['title']) for video in response['items']]
+
+    return sorted(info_list, key=lambda item: item[1], reverse=True)
 
 # new uploads
 def news(last=None):
