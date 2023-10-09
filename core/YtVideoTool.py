@@ -87,15 +87,34 @@ def info(*vids, jst=True):
                 ), video['snippet']['title']) for video in response['items']), key=lambda item: item[1], reverse=True)
 
 # new uploads
-def news(last):
+def news(last=None):
     request = yt().playlistItems().list(
         part="contentDetails",
         playlistId=GLOBALS['CHANNEL']['PLAYLIST'], # videos playlist (latest videos from channel)
-        maxResults=last
+        maxResults=50 if last==-1 else last # uplimit is 50
     )
     response = request.execute()
 
-    return [video['contentDetails']['videoId'] for video in response['items']]
+    video_list = [video['contentDetails']['videoId'] for video in response['items']]
+
+    if last is not None:
+        while last == -1 or len(video_list) < last:
+            nextPageToken = response.get('nextPageToken', None)
+            if nextPageToken is None: # no more pages
+                break
+            request = yt().playlistItems().list(
+                part="contentDetails",
+                playlistId=GLOBALS['CHANNEL']['PLAYLIST'], # videos playlist (latest videos from channel)
+                maxResults=50 if last==-1 else last-len(video_list), # uplimit is 50
+                pageToken=nextPageToken
+            )
+            response = request.execute()
+            if not response['items']: # no more videos found
+                break
+            video_list += [video['contentDetails']['videoId'] for video in response['items']]
+
+    return video_list
+
 
 # show lastest
 def show_last(last=10):
